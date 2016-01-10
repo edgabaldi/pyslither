@@ -5,9 +5,32 @@ from unittest import TestCase
 from pyslither.column import Column, MONEY_WITH_IMPLIED_DECIMAL
 
 
-class ColumnTestCase(TestCase):
+class ColumnInstanceTestCase(TestCase):
 
-    def test_parse_default_as_string(self):
+    def setUp(self):
+        name = 'name'
+        length = 10
+        self.column = Column(name, length)
+
+    def test_should_have_a_name(self):
+        self.assertEqual('name', self.column.name)
+
+    def test_should_have_a_length(self):
+        self.assertEqual(10, self.column.length)
+
+    def test_should_have_a_default_alignment(self):
+        self.assertEqual('right', self.column.alignment)
+
+    def test_should_have_a_default_padding(self):
+        self.assertEqual(' ',self.column.padding)
+
+
+class ColumnParseTestCase(TestCase):
+    """
+    When parsing a value from a file
+    """
+
+    def test_parse_default_a_string(self):
         column = Column('name', 10)
         self.assertEqual('name', column.parse('    name '))
         self.assertEqual('234', column.parse('    234'))
@@ -49,3 +72,37 @@ class ColumnTestCase(TestCase):
         self.assertEqual(datetime.date(2016, 1, 10), date)
 
 
+class ColumnSpecifyAlignmentTestCase(TestCase):
+    """
+    When specifying an alignment
+    """
+
+    def test_should_override_default_value(self):
+        column = Column('name', 10, align='left')
+        self.assertEqual('left', column.alignment)
+
+    def test_should_only_accept_right_or_left_for_an_alignment(self):
+        with self.assertRaises(AssertionError):
+            column = Column('name', 10, align='bogus')
+
+
+class ColumnApplyingFormattingOptionsTestCase(TestCase):
+    """
+    When applying formatting options
+    """
+
+    def test_should_respect_a_right_alignment(self):
+        column = Column('name', 5, align='right')
+        self.assertEqual('   25', column.format(25))
+
+    def test_should_respect_a_left_alignment(self):
+        column = Column('name', 5, align='left')
+        self.assertEqual('25   ', column.format(25))
+
+    def test_should_respect_padding_with_spaces(self):
+        column = Column('amount', 5, padding=' ')
+        self.assertEqual('   25', column.format(25))
+
+    def test_should_respect_padding_with_zeros_with_integer_type(self):
+        column = Column('amount', 5, padding='0', type=int)
+        self.assertEqual('00025', column.format(25))

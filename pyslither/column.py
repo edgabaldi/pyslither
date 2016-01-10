@@ -6,10 +6,13 @@ MONEY_WITH_IMPLIED_DECIMAL = 'MONEY_WITH_IMPLIED_DECIMAL'
 class Column:
 
     def __init__(self, name, length, type=str, **options):
+        self.assert_valid_options(options)
         self.name = name
         self.length = length
         self.type = type
         self.options = options
+        self.alignment = options.get('align', 'right')
+        self.padding = options.get('padding', ' ')
 
     def parse(self, value):
 
@@ -27,6 +30,24 @@ class Column:
             return self.to_date(value)
 
         return self.to_str(value)
+
+    def format(self, value):
+        value = str(value)
+
+        if self.alignment == 'right':
+            formated = value.rjust(self.length)
+        else:
+            formated = value.ljust(self.length)
+
+        if self.padding == '0':
+            formated = formated.replace(' ', '0')
+
+        return formated
+
+    def assert_valid_options(self, options):
+
+        if 'align' in options.keys():
+            assert options['align'] in ['right', 'left']
 
     def to_str(self, value):
         return value.strip()
