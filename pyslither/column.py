@@ -12,28 +12,42 @@ class Column:
         self.options = options
 
     def parse(self, value):
+
         if self.type is int:
-            try:
-                value = int(float(value))
-            except ValueError:
-                value = 0
-            return value
+            return self.to_int(value)
+
         elif self.type is Decimal:
-            try:
-                value = Decimal(value)
-            except:
-                value = Decimal(0)
-            return value
+            return self.to_decimal(value)
+
         elif self.type is MONEY_WITH_IMPLIED_DECIMAL:
-            try:
-                value = Decimal(value)
-            except:
-                value = Decimal(0)
+            value = self.to_decimal(value)
             return value / 100
+
         elif self.type is datetime.date:
-            if 'format' in self.options.keys():
-                format = self.options['format']
-            else:
-                format = '%Y-%m-%d'
-            return datetime.datetime.strptime(value, format).date()
+            return self.to_date(value)
+
+        return self.to_str(value)
+
+    def to_str(self, value):
         return value.strip()
+
+    def to_int(self, value):
+        try:
+            value = int(float(value))
+        except ValueError:
+            value = 0
+        return value
+
+    def to_decimal(self, value):
+        try:
+            value = Decimal(value)
+        except:
+            value = Decimal(0)
+        return value
+
+    def to_date(self, value):
+        if 'format' in self.options.keys():
+            format = self.options['format']
+        else:
+            format = '%Y-%m-%d'
+        return datetime.datetime.strptime(value, format).date()
