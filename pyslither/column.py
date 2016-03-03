@@ -13,6 +13,7 @@ class Column:
         self.options = options
         self.alignment = options.get('align', 'right')
         self.padding = options.get('padding', ' ')
+        self.truncate = options.get('truncate')
 
     def parse(self, value):
 
@@ -42,7 +43,16 @@ class Column:
         if self.padding == '0':
             formated = formated.replace(' ', '0')
 
-        return formated
+        return self.validate_size(formated)
+
+    def validate_size(self, value):
+        if len(value) > self.length:
+            if self.truncate:
+                index = self.alignment == 'left' and slice(None, self.length) or slice(-self.length, None)
+                value = value[index]
+            else:
+                raise FormattedStringExceedsLengthError
+        return value
 
     def assert_valid_options(self, options):
 
@@ -72,3 +82,7 @@ class Column:
         else:
             format = '%Y-%m-%d'
         return datetime.datetime.strptime(value, format).date()
+
+
+class FormattedStringExceedsLengthError(Exception):
+    pass

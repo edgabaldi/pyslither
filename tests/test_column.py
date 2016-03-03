@@ -2,7 +2,8 @@ import datetime
 from decimal import Decimal
 from unittest import TestCase
 
-from pyslither.column import Column, MONEY_WITH_IMPLIED_DECIMAL
+from pyslither.column import (Column, MONEY_WITH_IMPLIED_DECIMAL,
+                              FormattedStringExceedsLengthError)
 
 
 class ColumnInstanceTestCase(TestCase):
@@ -106,3 +107,39 @@ class ColumnApplyingFormattingOptionsTestCase(TestCase):
     def test_should_respect_padding_with_zeros_with_integer_type(self):
         column = Column('amount', 5, padding='0', type=int)
         self.assertEqual('00025', column.format(25))
+
+    def test_should_respect_padding_with_zeros_aligned_right_with_decimal_type(self):
+        column = Column('amount', 5, type=Decimal, padding='0', align='right')
+        self.assertEqual('04.45', column.format(4.45))
+
+    def test_should_respect_padding_with_zeros_aligned_left_with_decimal_type(self):
+        column = Column('amount', 5, type=Decimal, padding='0', align='left')
+        self.assertEqual('4.450', column.format(4.45))
+
+
+class ColumnFormattingTestCase(TestCase):
+    """
+    When formatting values for a file
+    """
+
+    def setUp(self):
+        self.length = 10
+
+    def test_should_default_to_a_string(self):
+        column = Column('name', self.length)
+        self.assertEqual('      Bill', column.format('Bill'))
+
+    def test_should_raise_an_error_if_truncate_is_false(self):
+        value = "XX" * self.length
+        with self.assertRaises(FormattedStringExceedsLengthError):
+            column = Column('name', self.length)
+            column.format(value)
+
+    def test_should_truncate_from_the_left_if_truncate_is_true_and_aligned_left(self):
+        column = Column('name', self.length, truncate=True, align='left')
+        self.assertEqual('This is to', column.format('This is too long'))
+
+    def test_should_truncate_from_the_left_if_truncate_is_true_and_aligned_right(self):
+        column = Column('name', self.length, truncate=True, align='right')
+        self.assertEqual('s too long', column.format("This is too long"))
+
